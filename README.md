@@ -12,6 +12,7 @@ This repository serves as a mono-repo for all Farcaster V2 frames for Celo.
 - **Wallet Integration**: WalletConnect support for 300+ wallets
 - **Real-time Balances**: Track who owes what instantly
 - **Mobile-Optimized**: Perfect for Farcaster mobile experience
+- **Web3 Impact Tracking**: Integrated with Divvi protocol to earn rewards
 
 ### 🚀 Quick Start
 ```bash
@@ -22,6 +23,14 @@ npm run dev
 ### 📱 Test the Frame
 - **Local**: http://localhost:3000/netsplit-frame
 - **Frame Debugger**: https://warpcast.com/~/developers/frames
+
+### 📊 Divvi Integration
+Netsplit includes built-in web3 impact tracking through Divvi protocol:
+- **Earn rewards** for driving user engagement
+- **Track impact** with on-chain metrics
+- **Measure success** through objective data
+
+See [DIVVI_INTEGRATION.md](./DIVVI_INTEGRATION.md) for setup instructions.
 
 See [NETSPLIT_README.md](./NETSPLIT_README.md) for detailed documentation.
 

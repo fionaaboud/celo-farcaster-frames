@@ -7,6 +7,9 @@ import sdk, { type Context } from "@farcaster/frame-sdk";
 import { parseEther, formatEther } from "viem";
 import { celo, celoAlfajores } from "wagmi/chains";
 import WalletInfo from "@/components/WalletInfo";
+import { useDivviContext } from '@/components/providers/DivviProvider';
+import { useDivvi } from '@/hooks/useDivvi';
+import { logDivviAction } from '@/utils/divviTracking';
 
 interface GroupMember {
   fid: number;
@@ -62,6 +65,10 @@ export default function NetsplitApp() {
 
   const { sendTransaction } = useSendTransaction();
 
+  // Divvi integration
+  const { config: divviConfig, isEnabled: isDivviEnabled } = useDivviContext();
+  const { trackUserAction, isConfigured: isDivviConfigured } = useDivvi(divviConfig);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -79,6 +86,20 @@ export default function NetsplitApp() {
       load();
     }
   }, [isSDKLoaded]);
+
+  // Track wallet connection for Divvi
+  useEffect(() => {
+    if (isConnected && address && isDivviEnabled && isDivviConfigured) {
+      logDivviAction({
+        action: 'wallet_connected',
+        userAddress: address,
+        builderAddress: divviConfig?.builderAddress || '',
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }, [isConnected, address, isDivviEnabled, isDivviConfigured, divviConfig?.builderAddress]);
 
   // Helper function to validate if input is a valid Ethereum address
   const isValidAddress = (input: string): boolean => {
@@ -163,6 +184,20 @@ export default function NetsplitApp() {
     setNewGroupName('');
     setNewGroupMembers([]);
     setCurrentView('home');
+
+    // Track group creation for Divvi
+    if (isDivviEnabled && isDivviConfigured && address) {
+      logDivviAction({
+        action: 'group_created',
+        userAddress: address,
+        builderAddress: divviConfig?.builderAddress || '',
+        metadata: {
+          groupId: newGroup.id,
+          memberCount: newGroup.members.length,
+          groupName: newGroup.name,
+        },
+      });
+    }
   };
 
   const addExpense = () => {
@@ -213,6 +248,23 @@ export default function NetsplitApp() {
     setNewExpense({ title: '', amount: '', currency: 'cUSD', paidBy: '', splitType: 'equal' });
     setCustomSplitAmounts({});
     setCurrentView('group-detail');
+
+    // Track expense addition for Divvi
+    if (isDivviEnabled && isDivviConfigured && address) {
+      logDivviAction({
+        action: 'expense_added',
+        userAddress: address,
+        builderAddress: divviConfig?.builderAddress || '',
+        metadata: {
+          groupId: selectedGroup.id,
+          expenseId: expense.id,
+          amount: expense.amount.toString(),
+          currency: expense.currency,
+          splitType: expense.splitType,
+          memberCount: validMembers.length,
+        },
+      });
+    }
   };
 
   const calculateBalances = (group: Group) => {
@@ -260,10 +312,38 @@ export default function NetsplitApp() {
     if (!isConnected || !address) return;
 
     try {
-      await sendTransaction({
+      const txHash = await sendTransaction({
         to: toAddress as `0x${string}`,
         value: parseEther(amount.toString()),
       });
+
+      // Track payment for Divvi
+      if (isDivviEnabled && isDivviConfigured && txHash) {
+        logDivviAction({
+          action: 'payment_made',
+          userAddress: address,
+          builderAddress: divviConfig?.builderAddress || '',
+          metadata: {
+            amount: amount.toString(),
+            currency: 'CELO',
+            toAddress,
+            transactionHash: txHash,
+          },
+        });
+
+        // Register referral with Divvi if configured
+        if (divviConfig?.campaignIds && divviConfig.campaignIds.length > 0) {
+          try {
+            await trackUserAction('payment_made', address, txHash, {
+              amount: amount.toString(),
+              currency: 'CELO',
+              toAddress,
+            });
+          } catch (error) {
+            console.error('Failed to track payment with Divvi:', error);
+          }
+        }
+      }
     } catch (error) {
       console.error("Payment failed:", error);
     }

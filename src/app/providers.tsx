@@ -9,10 +9,19 @@ const WagmiProvider = dynamic(
   }
 );
 
+const DivviProvider = dynamic(
+  () => import("@/components/providers/DivviProvider"),
+  {
+    ssr: false,
+  }
+);
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider>
-      {children}
+      <DivviProvider>
+        {children}
+      </DivviProvider>
     </WagmiProvider>
   );
 }
