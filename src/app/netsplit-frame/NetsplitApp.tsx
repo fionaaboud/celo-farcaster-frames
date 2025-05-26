@@ -10,6 +10,7 @@ import WalletInfo from "@/components/WalletInfo";
 import { useDivviContext } from '@/components/providers/DivviProvider';
 import { useDivvi } from '@/hooks/useDivvi';
 import { logDivviAction } from '@/utils/divviTracking';
+import DivviTestPanel from '@/components/DivviTestPanel';
 
 interface GroupMember {
   fid: number;
@@ -364,6 +365,9 @@ export default function NetsplitApp() {
           </div>
         )}
       </div>
+
+      {/* Divvi Test Panel - only show in development */}
+      {process.env.NODE_ENV === 'development' && <DivviTestPanel />}
 
       {isConnected && (
         <>
